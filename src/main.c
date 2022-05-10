@@ -37,14 +37,15 @@ int is_dir(const char * path) {
 }
 
 static unsigned long parse_string(const char * s) {
-    unsigned long bs = strtoul(s, NULL, 10);
-    if (errno == ERANGE && bs == ULONG_MAX) {
+    unsigned long n = strtoul(s, NULL, 10);
+    if (errno == ERANGE && n == ULONG_MAX) {
         fprintf(stderr, "Overflow error, cannot convert \"%s\" to integer\n", s);
-        return 0;
+        n = 0;
     } else if (errno == EINVAL) {
         fprintf(stderr, "Invalid numeric value \"%s\"\n", s);
-        return 0;
+        n = 0;
     }
+    return n;
 }
 int main(int argc, char * argv[]) {
     // -1: decode, 0: unspecified, 1: encode, 2: test
@@ -71,14 +72,14 @@ int main(int argc, char * argv[]) {
             } else if (argv[i][1] == 't') {
                 mode = 2;
             } else if (argv[i][1] == 'b') {
-                block_size = MiB(parse_string(argv[i+1]));
+                block_size = MiB(parse_string(argv[i + 1]));
                 i++;
             } else if (argv[i][1] == 'c') {
                 force_stdstreams = 1;
             } else if (argv[i][1] == 'j') {
-                workers = parse_string(argv[i+1]);
+                workers = parse_string(argv[i + 1]);
                 i++;
-            } else if(argv[i][1] == '-') {
+            } else if (argv[i][1] == '-') {
                 double_dash = 1;
             }
         } else {
@@ -140,7 +141,7 @@ int main(int argc, char * argv[]) {
     FILE *input_des, *output_des;
 
     if (input != NULL) {
-        if(is_dir(input)) {
+        if (is_dir(input)) {
             fprintf(stderr, "Error: input is a directory.\n");
             return 1;
         }
@@ -155,7 +156,7 @@ int main(int argc, char * argv[]) {
     }
 
     if (output != NULL && mode != 2) {
-        if(is_dir(output)) {
+        if (is_dir(output)) {
             fprintf(stderr, "Error: output is a directory.\n");
             return 1;
         }
