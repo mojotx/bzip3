@@ -7,7 +7,7 @@ PREFIX?=/usr/local
 .PHONY: all clean format install cloc check
 
 LIBBZ3_OBJECTS=obj/libsais.o obj/crc32.o obj/rle.o obj/cm.o \
-               obj/libbz3.o obj/lzp.o
+               obj/libbz3.o obj/lzp.o obj/common.o
 
 all: bzip3 libbzip3.so
 
