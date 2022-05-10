@@ -17,23 +17,35 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <assert.h>
+#include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "libbz3.h"
 
 int is_dir(const char * path) {
     struct stat sb;
-    if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode))
-        return 1;
+    if (stat(path, &sb) == 0 && S_ISDIR(sb.st_mode)) return 1;
     return 0;
 }
 
+static unsigned long parse_string(const char * s) {
+    unsigned long bs = strtoul(s, NULL, 10);
+    if (errno == ERANGE && bs == ULONG_MAX) {
+        fprintf(stderr, "Overflow error, cannot convert \"%s\" to integer\n", s);
+        return 0;
+    } else if (errno == EINVAL) {
+        fprintf(stderr, "Invalid numeric value \"%s\"\n", s);
+        return 0;
+    }
+}
 int main(int argc, char * argv[]) {
     // -1: decode, 0: unspecified, 1: encode, 2: test
     int mode = 0;
@@ -59,12 +71,12 @@ int main(int argc, char * argv[]) {
             } else if (argv[i][1] == 't') {
                 mode = 2;
             } else if (argv[i][1] == 'b') {
-                block_size = MiB(atoi(argv[i + 1]));
+                block_size = MiB(parse_string(argv[i+1]));
                 i++;
             } else if (argv[i][1] == 'c') {
                 force_stdstreams = 1;
             } else if (argv[i][1] == 'j') {
-                workers = atoi(argv[i + 1]);
+                workers = parse_string(argv[i+1]);
                 i++;
             } else if(argv[i][1] == '-') {
                 double_dash = 1;
@@ -343,7 +355,8 @@ int main(int argc, char * argv[]) {
                     sizes[i] = read_neutral_s32(byteswap_buf);
                     if (fread(&byteswap_buf, 1, 4, input_des) != 4) break;
                     old_sizes[i] = read_neutral_s32(byteswap_buf);
-                    if (fread(buffers[i], 1, sizes[i], input_des) != sizes[i]) {
+                    assert(sizes[i] >= 0);
+                    if (fread(buffers[i], 1, sizes[i], input_des) != (size_t)(sizes[i])) {
                         fprintf(stderr, "I/O error.\n");
                         return 1;
                     }
@@ -367,7 +380,8 @@ int main(int argc, char * argv[]) {
                     sizes[i] = read_neutral_s32(byteswap_buf);
                     if (fread(&byteswap_buf, 1, 4, input_des) != 4) break;
                     old_sizes[i] = read_neutral_s32(byteswap_buf);
-                    if (fread(buffers[i], 1, sizes[i], input_des) != sizes[i]) {
+                    assert(sizes[i] >= 0);
+                    if (fread(buffers[i], 1, sizes[i], input_des) != (size_t)(sizes[i])) {
                         fprintf(stderr, "I/O error.\n");
                         return 1;
                     }
